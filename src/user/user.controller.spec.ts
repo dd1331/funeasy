@@ -81,4 +81,19 @@ describe('User e2e', () => {
         ).toBe(true);
       });
   });
+
+  it('회원탈퇴', async () => {
+    const dto: CreateUserDto = {
+      email: fakerKO.internet.email(),
+      name: fakerKO.person.fullName(),
+      password: fakerKO.string.alphanumeric(10),
+    };
+    const user = await userService.signup(dto);
+    const { accessToken } = authService.login(user);
+    return request(app.getHttpServer())
+      .delete('/users')
+      .set({ Authorization: `Bearer ${accessToken}` })
+      .expect(HttpStatus.OK)
+      .expect(async ({ body }) => expect(body.affected).toBe(1));
+  });
 });

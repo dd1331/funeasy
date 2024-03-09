@@ -1,4 +1,9 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { USER_REPOSITORY } from './constants';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -31,10 +36,22 @@ export class UserService {
   async update(userId: number, dto: UpdateUserDto) {
     const user = await this.userRepo.findOneBy({ userId });
 
+    if (!user) throw new NotFoundException('존재하지 않는 유저입니다');
+
     await user.update(dto);
 
     const updated = await this.userRepo.save(user);
 
     return updated;
+  }
+
+  async closeAccount(userId: number) {
+    const user = await this.userRepo.findOneBy({ userId });
+
+    // TODO: 캐시로그삭제등 처리??
+
+    if (!user) throw new NotFoundException('존재하지 않는 유저입니다');
+
+    return await this.userRepo.softDelete({ userId });
   }
 }

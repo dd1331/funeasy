@@ -1,5 +1,11 @@
 import * as bcrypt from 'bcrypt';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { SALT_OR_ROUNDS } from '../constants';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
@@ -20,6 +26,12 @@ export class User {
 
   @Column({ default: 0 })
   cash: number;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   async signup({ password, ...rest }: CreateUserDto) {
     const hash = await bcrypt.hash(password, SALT_OR_ROUNDS);
