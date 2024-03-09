@@ -17,8 +17,7 @@ export class AuthService {
 
     if (!user) return null;
 
-    // TODO: refactor
-    return user.login({ password });
+    return user.validatePassword({ password });
   }
   login(user: User) {
     const payload = { userId: user.userId };
