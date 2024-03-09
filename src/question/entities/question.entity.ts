@@ -1,4 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { SolveQuestionDto } from '../dto/solve-question.dto';
 
 export enum QuestionType {
   EVERY_THREE_HOURS = 'EVERY_THREE',
@@ -25,4 +26,16 @@ export class Question {
 
   @Column()
   type: QuestionType;
+
+  solve(dto: SolveQuestionDto) {
+    // TODO: lock
+    const correct = this.isCorrect(dto);
+    if (correct) this.quantity = this.quantity - 1;
+
+    return this.answer === dto.answer;
+  }
+
+  isCorrect(dto: SolveQuestionDto) {
+    return this.answer === dto.answer;
+  }
 }

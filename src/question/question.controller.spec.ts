@@ -11,6 +11,7 @@ import { ResponseInterceptor } from '../common/response.interceptor';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { UserService } from '../user/user.service';
 import { QUESTION_TAKE } from './constants';
+import { SolveQuestionDto } from './dto/solve-question.dto';
 import { Question } from './entities/question.entity';
 import { QuestionModule } from './question.module';
 import { seedQuestions } from './seed';
@@ -104,6 +105,38 @@ describe('Question e2e', () => {
       const [first, ...rest] = await dataSource.getRepository(Question).find();
 
       expect(rest.some((question) => question.mid === first.mid)).toBe(true);
+    });
+  });
+
+  describe('문제 풀기', () => {
+    let token;
+    beforeEach(async () => {
+      const dto: CreateUserDto = {
+        email: fakerKO.internet.email(),
+        name: fakerKO.person.fullName(),
+        password: '1234',
+      };
+
+      const user = await userService.signup(dto);
+      const { accessToken } = authService.login(user);
+      token = accessToken;
+    });
+
+    it('정답일경우 문제 총량 차감', async () => {
+      const [question] = await seedQuestions(dataSource);
+
+      const dto: SolveQuestionDto = { answer: question.answer };
+
+      return request(app.getHttpServer())
+        .post('/questions/' + question.questionId)
+        .send(dto)
+        .set({ Authorization: `Bearer ${token}` })
+        .expect(HttpStatus.OK)
+        .expect(({ body }) => {
+          body.data.quantity,
+            question.quantity,
+            expect(body.data.quantity).toBe(question.quantity - 1);
+        });
     });
   });
 });

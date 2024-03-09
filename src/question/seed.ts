@@ -17,7 +17,7 @@ export const seedQuestions = async (
       title: fakerKO.lorem.sentences(2),
       answer: fakerKO.lorem.word(5),
       mid,
-      quantity: fakerKO.number.int(10),
+      quantity: fakerKO.number.int({ min: 3, max: 10 }),
       type: QuestionType.ANY_TIME,
     };
 
@@ -25,11 +25,12 @@ export const seedQuestions = async (
       title: fakerKO.lorem.sentences(2),
       answer: fakerKO.lorem.word(5),
       mid,
-      quantity: fakerKO.number.int(10),
+      quantity: fakerKO.number.int({ min: 3, max: 10 }),
       type: QuestionType.ANY_TIME,
     };
-    await repo.save([dto, dto2]);
+    return repo.save([dto, dto2]);
   });
 
-  await Promise.all(promises);
+  const res = await Promise.all(promises);
+  return res.flat();
 };

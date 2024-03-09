@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { QUESTION_TAKE } from './constants';
 import { CreateQuestionDto } from './dto/create-question.dto';
-import { UpdateQuestionDto } from './dto/update-question.dto';
+import { SolveQuestionDto } from './dto/solve-question.dto';
 import { Question } from './entities/question.entity';
 
 @Injectable()
@@ -22,11 +22,17 @@ export class QuestionService {
     return data;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} question`;
+  async solve(questionId: number, dto: SolveQuestionDto) {
+    const question = await this.questionRepo.findOneBy({ questionId });
+
+    question.solve(dto);
+
+    await this.questionRepo.save(question);
+
+    return question;
   }
 
-  update(id: number, updateQuestionDto: UpdateQuestionDto) {
+  update(id: number, updateQuestionDto: SolveQuestionDto) {
     return `This action updates a #${id} question`;
   }
 
