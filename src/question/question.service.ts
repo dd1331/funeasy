@@ -1,15 +1,25 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { QUESTION_TAKE } from './constants';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
+import { Question } from './entities/question.entity';
 
 @Injectable()
 export class QuestionService {
+  constructor(
+    @InjectRepository(Question)
+    private readonly questionRepo: Repository<Question>,
+  ) {}
   create(createQuestionDto: CreateQuestionDto) {
     return 'This action adds a new question';
   }
 
-  findAll() {
-    return `This action returns all question`;
+  async findAll() {
+    const data = await this.questionRepo.find({ take: QUESTION_TAKE });
+
+    return data;
   }
 
   findOne(id: number) {

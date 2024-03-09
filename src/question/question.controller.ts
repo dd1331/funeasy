@@ -1,9 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { QuestionService } from './question.service';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
+import { QuestionService } from './question.service';
 
-@Controller('question')
+@Controller('questions')
 export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
@@ -13,8 +21,12 @@ export class QuestionController {
   }
 
   @Get()
-  findAll() {
-    return this.questionService.findAll();
+  async findAll() {
+    const data = await this.questionService.findAll();
+
+    if (data.length) return data;
+
+    return { data, code: 1 };
   }
 
   @Get(':id')
@@ -23,7 +35,10 @@ export class QuestionController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateQuestionDto: UpdateQuestionDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateQuestionDto: UpdateQuestionDto,
+  ) {
     return this.questionService.update(+id, updateQuestionDto);
   }
 

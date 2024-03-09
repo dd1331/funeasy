@@ -34,6 +34,7 @@ describe('Auth e2e', () => {
   });
   it('인가 성공', async () => {
     const dto: CreateUserDto = {
+      name: fakerKO.person.fullName(),
       email: fakerKO.internet.email(),
       password: '1234',
     };
@@ -51,6 +52,7 @@ describe('Auth e2e', () => {
     const email = fakerKO.internet.email();
     const dto: CreateUserDto = {
       email: email,
+      name: fakerKO.person.fullName(),
       password: '1234',
     };
 
@@ -67,6 +69,7 @@ describe('Auth e2e', () => {
   it('로그인 실패', async () => {
     const dto: CreateUserDto = {
       email: fakerKO.internet.email(),
+      name: fakerKO.person.fullName(),
       password: '1234',
     };
 
