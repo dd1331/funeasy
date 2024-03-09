@@ -1,20 +1,80 @@
+import { fakerKO } from '@faker-js/faker';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthController } from './auth.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import * as request from 'supertest';
+import { ormModuleOption } from '../common/orm-module-option';
+import { CreateUserDto } from '../user/dto/create-user.dto';
+import { UserService } from '../user/user.service';
+import { AuthModule } from './auth.module';
 import { AuthService } from './auth.service';
 
-describe('AuthController', () => {
-  let controller: AuthController;
-
+describe('Auth e2e', () => {
+  let app: INestApplication;
+  let userService: UserService;
+  let authService: AuthService;
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [AuthController],
-      providers: [AuthService],
+      imports: [TypeOrmModule.forRoot(ormModuleOption), AuthModule],
     }).compile();
 
-    controller = module.get<AuthController>(AuthController);
-  });
+    userService = module.get<UserService>(UserService);
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+    authService = module.get<AuthService>(AuthService);
+
+    app = module.createNestApplication();
+    await app.init();
+  });
+  afterEach(async () => await app.close());
+
+  it('인가 실패', () => {
+    return request(app.getHttpServer())
+      .get('/auth/guarded')
+      .expect(HttpStatus.UNAUTHORIZED);
+  });
+  it('인가 성공', async () => {
+    const dto: CreateUserDto = {
+      email: fakerKO.internet.email(),
+      password: '1234',
+    };
+
+    const user = await userService.signup(dto);
+
+    const { accessToken } = await authService.login(user);
+
+    return request(app.getHttpServer())
+      .get('/auth/guarded')
+      .set({ Authorization: `Bearer ${accessToken}` })
+      .expect(HttpStatus.OK);
+  });
+  it('로그인 성공', async () => {
+    const email = fakerKO.internet.email();
+    const dto: CreateUserDto = {
+      email: email,
+      password: '1234',
+    };
+
+    await userService.signup(dto);
+
+    return request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password: '1234' })
+      .expect(HttpStatus.OK)
+      .expect((res) => {
+        expect(res.body.accessToken).toEqual(expect.any(String));
+      });
+  });
+  it('로그인 실패', async () => {
+    const dto: CreateUserDto = {
+      email: fakerKO.internet.email(),
+      password: '1234',
+    };
+
+    await userService.signup(dto);
+
+    return request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: fakerKO.internet.email(), password: 'wrong' })
+      .expect(HttpStatus.UNAUTHORIZED);
   });
 });
