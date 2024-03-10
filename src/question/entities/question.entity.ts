@@ -6,9 +6,10 @@ import { NotEnoughQuantityException } from './not-enough-quantity.exception';
 import { WrongAnsewrException } from './wrong-answer.exception';
 
 export enum QuestionType {
-  ONE = 'EVERY_THREE',
-  TWO = 'ONCE_DAY',
-  THREE = 'ANY_TIME',
+  ONE = 'ONE',
+  TWO = 'TWO',
+  THREE = 'THREE',
+  FOUR = 'FOUR',
 }
 
 @Entity()
@@ -56,6 +57,7 @@ export class Question extends GoodBaseEntity<Question> {
       return this.answer === dto.answer;
     if (this.type === QuestionType.THREE)
       return this.title + 'a' === dto.answer;
+    if (this.type === QuestionType.FOUR) return this.title + 'b' === dto.answer;
     return false;
   }
 }
