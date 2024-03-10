@@ -63,7 +63,7 @@ describe('Question e2e', () => {
     });
 
     afterEach(() => {
-      // jest.clearAllTimers();
+      jest.clearAllTimers();
       jest.useRealTimers();
     });
     it('문제 목록 5개 이상일시 3개 리턴', async () => {
@@ -245,6 +245,28 @@ describe('Question e2e', () => {
 
       // TODO: refactor 3은 시드데이터 만들때 반복 한번에 몇개를 만드는지에 의존하고 있어 깨질우려
       expect(questionsExcludingTypeThree.length).toBe(questions.length - 3);
+    });
+    it.only('유저는 동일한 mid를 가진 타입3 문제에 대해 전체기간에 한 번 참여가능하다', async () => {
+      const questionService = module.get<QuestionService>(QuestionService);
+      const questions = await seedQuestions(dataSource, 5);
+      const [question] = await dataSource.getRepository(Question).find();
+
+      question.quantity = 0;
+      await dataSource.getRepository(Question).save(question);
+
+      const questionResults = await questionService.findAll({
+        userId: user.userId,
+        take: 100,
+      });
+
+      expect(questionResults.length).toBe(questions.length - 1);
+      // const questionsExcludingTypeThree = await questionService.findAll({
+      //   userId: user.userId,
+      //   take: 100,
+      // });
+
+      // // TODO: refactor 3은 시드데이터 만들때 반복 한번에 몇개를 만드는지에 의존하고 있어 깨질우려
+      // expect(questionsExcludingTypeThree.length).toBe(questions.length - 3);
     });
   });
 

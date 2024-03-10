@@ -30,7 +30,7 @@ export class QuestionService {
     const toExclude = await this.getQuestionMidsToExclude(userId);
 
     const data = await this.questionRepo.find({
-      where: { mid: Not(In(toExclude)) },
+      where: { mid: Not(In(toExclude)), quantity: MoreThan(0) },
       take,
     });
 

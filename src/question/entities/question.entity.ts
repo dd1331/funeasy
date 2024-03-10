@@ -2,6 +2,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { GoodBaseEntity } from '../../common/good-base.entity';
 import { DEFAULT_CASH } from '../constants';
 import { SolveQuestionDto } from '../dto/solve-question.dto';
+import { NotEnoughQuantityException } from './not-enough-quantity.exception';
 import { WrongAnsewrException } from './wrong-answer.exception';
 
 export enum QuestionType {
@@ -45,6 +46,8 @@ export class Question extends GoodBaseEntity<Question> {
   }
 
   private deductQuantity() {
+    if (!this.quantity) throw new NotEnoughQuantityException();
+
     this.quantity = this.quantity - 1;
   }
 

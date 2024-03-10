@@ -47,4 +47,17 @@ describe('Question', () => {
     expect(correct).toBe(true);
     expect(question.quantity).toBe(OG_QUANTITY - 1);
   });
+
+  it('남은 문제가 없으면 에러', () => {
+    const question = new Question({
+      title: 'testTitle',
+      answer: 'test',
+      quantity: 0,
+      type: QuestionType.THREE,
+    });
+
+    const dto = new SolveQuestionDto({ answer: 'testTitlea' });
+
+    expect(() => question.solve(dto)).toThrow();
+  });
 });
