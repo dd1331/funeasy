@@ -13,22 +13,29 @@ export const seedQuestions = async (
     .map((_, index) => index.toString());
 
   const promises = mids.map(async (mid) => {
-    const dto: CreateQuestionDto = {
+    const dto: CreateQuestionDto = repo.create({
       title: fakerKO.lorem.sentences(2),
       answer: fakerKO.lorem.word(5),
       mid,
       quantity: fakerKO.number.int({ min: 3, max: 10 }),
-      type: QuestionType.ANY_TIME,
-    };
+      type: QuestionType.ONE,
+    });
 
-    const dto2: CreateQuestionDto = {
+    const dto2: CreateQuestionDto = repo.create({
       title: fakerKO.lorem.sentences(2),
       answer: fakerKO.lorem.word(5),
       mid,
       quantity: fakerKO.number.int({ min: 3, max: 10 }),
-      type: QuestionType.ANY_TIME,
-    };
-    return repo.save([dto, dto2]);
+      type: QuestionType.TWO,
+    });
+    const dto3: CreateQuestionDto = repo.create({
+      title: fakerKO.lorem.sentences(2),
+      answer: fakerKO.lorem.word(5),
+      mid,
+      quantity: fakerKO.number.int({ min: 3, max: 10 }),
+      type: QuestionType.THREE,
+    });
+    return repo.save([dto, dto2, dto3]);
   });
 
   const res = await Promise.all(promises);

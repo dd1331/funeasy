@@ -1,14 +1,16 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { GoodBaseEntity } from '../../common/good-base.entity';
 import { SolveQuestionDto } from '../dto/solve-question.dto';
+import { WrongAnsewrException } from './wrong-answer.exception';
 
 export enum QuestionType {
-  EVERY_THREE_HOURS = 'EVERY_THREE',
-  ONCE_A_DAY = 'ONCE_DAY',
-  ANY_TIME = 'ANY_TIME',
+  ONE = 'EVERY_THREE',
+  TWO = 'ONCE_DAY',
+  THREE = 'ANY_TIME',
 }
 
 @Entity()
-export class Question {
+export class Question extends GoodBaseEntity<Question> {
   @PrimaryGeneratedColumn()
   questionId: number;
 
@@ -30,12 +32,23 @@ export class Question {
   solve(dto: SolveQuestionDto) {
     // TODO: lock
     const correct = this.isCorrect(dto);
-    if (correct) this.quantity = this.quantity - 1;
 
-    return this.answer === dto.answer;
+    if (!correct) throw new WrongAnsewrException();
+
+    this.deductQuantity();
+
+    return correct;
   }
 
-  isCorrect(dto: SolveQuestionDto) {
-    return this.answer === dto.answer;
+  private deductQuantity() {
+    this.quantity = this.quantity - 1;
+  }
+
+  private isCorrect(dto: SolveQuestionDto) {
+    if (this.type === QuestionType.ONE || this.type === QuestionType.TWO)
+      return this.answer === dto.answer;
+    if (this.type === QuestionType.THREE)
+      return this.title + 'a' === dto.answer;
+    return false;
   }
 }

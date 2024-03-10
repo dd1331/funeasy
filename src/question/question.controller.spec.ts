@@ -6,6 +6,8 @@ import * as request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { AuthService } from '../auth/auth.service';
+import { WRONG_CODE } from '../common/constants';
+import { HttpExceptionFilter } from '../common/http-exception.filter';
 import { ormModuleOption } from '../common/orm-module-option';
 import { ResponseInterceptor } from '../common/response.interceptor';
 import { CreateUserDto } from '../user/dto/create-user.dto';
@@ -37,6 +39,7 @@ describe('Question e2e', () => {
 
     app = module.createNestApplication();
     app.useGlobalInterceptors(new ResponseInterceptor());
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
   afterEach(async () => await app.close());
@@ -133,10 +136,36 @@ describe('Question e2e', () => {
         .set({ Authorization: `Bearer ${token}` })
         .expect(HttpStatus.OK)
         .expect(({ body }) => {
-          body.data.quantity,
-            question.quantity,
-            expect(body.data.quantity).toBe(question.quantity - 1);
+          expect(body.data.quantity).toBe(question.quantity - 1);
         });
+    });
+
+    it('문제 타입관계없이 오답이면', async () => {
+      const dto = new SolveQuestionDto({ answer: 'wrong' });
+
+      const [questionType1, questionType2, questionType3] =
+        await seedQuestions(dataSource);
+
+      await request(app.getHttpServer())
+        .post('/questions/' + questionType1.questionId)
+        .send(dto)
+        .set({ Authorization: `Bearer ${token}` })
+        .expect(HttpStatus.OK)
+        .expect(({ body }) => {
+          expect(body.code).toBe(WRONG_CODE);
+        });
+      await request(app.getHttpServer())
+        .post('/questions/' + questionType2.questionId)
+        .send(dto)
+        .set({ Authorization: `Bearer ${token}` })
+        .expect(HttpStatus.OK)
+        .expect(({ body }) => expect(body.code).toBe(WRONG_CODE));
+      await request(app.getHttpServer())
+        .post('/questions/' + questionType3.questionId)
+        .send(dto)
+        .set({ Authorization: `Bearer ${token}` })
+        .expect(HttpStatus.OK)
+        .expect(({ body }) => expect(body.code).toBe(WRONG_CODE));
     });
   });
 });
