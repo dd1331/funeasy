@@ -1,14 +1,17 @@
+import { InternalServerErrorException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { SALT_OR_ROUNDS } from '../constants';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
+import { UserCash } from './user-cash.entity';
 
 @Entity()
 export class User {
@@ -27,11 +30,23 @@ export class User {
   @Column({ default: 0 })
   cash: number;
 
+  @OneToMany(() => UserCash, ({ user }) => user, { cascade: ['insert'] })
+  cashLog: UserCash[];
+
   @CreateDateColumn()
   createdAt: Date;
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  getReward(cash: number) {
+    if (!this.cashLog)
+      throw new InternalServerErrorException('캐시로그 조회해야함');
+
+    this.cash = this.cash + cash;
+
+    this.cashLog = [...this.cashLog, new UserCash({ cash })];
+  }
 
   async signup({ password, ...rest }: CreateUserDto) {
     const hash = await bcrypt.hash(password, SALT_OR_ROUNDS);

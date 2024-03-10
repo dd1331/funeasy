@@ -11,11 +11,13 @@ import { HttpExceptionFilter } from '../common/http-exception.filter';
 import { ormModuleOption } from '../common/orm-module-option';
 import { ResponseInterceptor } from '../common/response.interceptor';
 import { CreateUserDto } from '../user/dto/create-user.dto';
+import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
-import { QUESTION_TAKE } from './constants';
+import { DEFAULT_CASH, QUESTION_TAKE } from './constants';
 import { SolveQuestionDto } from './dto/solve-question.dto';
 import { Question } from './entities/question.entity';
 import { QuestionModule } from './question.module';
+import { QuestionService } from './question.service';
 import { seedQuestions } from './seed';
 
 describe('Question e2e', () => {
@@ -23,8 +25,9 @@ describe('Question e2e', () => {
   let userService: UserService;
   let authService: AuthService;
   let dataSource: DataSource;
+  let module: TestingModule;
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRoot(ormModuleOption),
         AuthModule,
@@ -113,6 +116,7 @@ describe('Question e2e', () => {
 
   describe('문제 풀기', () => {
     let token;
+    let user: User;
     beforeEach(async () => {
       const dto: CreateUserDto = {
         email: fakerKO.internet.email(),
@@ -120,7 +124,7 @@ describe('Question e2e', () => {
         password: '1234',
       };
 
-      const user = await userService.signup(dto);
+      user = await userService.signup(dto);
       const { accessToken } = authService.login(user);
       token = accessToken;
     });
@@ -140,9 +144,33 @@ describe('Question e2e', () => {
         });
     });
 
-    it('문제 타입관계없이 오답이면', async () => {
-      const dto = new SolveQuestionDto({ answer: 'wrong' });
+    it('정답일경우 할당된 캐시를 유저에게 추가하고 캐시로그를 남김', async () => {
+      const questionService = module.get<QuestionService>(QuestionService);
+      const [question, question2] = await seedQuestions(dataSource);
 
+      const dto: SolveQuestionDto = { answer: question.answer };
+
+      const solved = await questionService.solve({
+        userId: user.userId,
+        questionId: question.questionId,
+        ...dto,
+      });
+      expect(solved.cashLog.length).toBe(1);
+      expect(solved.cash).toBe(DEFAULT_CASH);
+
+      const dto2: SolveQuestionDto = { answer: question2.answer };
+      const solved2 = await questionService.solve({
+        userId: user.userId,
+        questionId: question2.questionId,
+        ...dto2,
+      });
+
+      expect(solved2.cashLog.length).toBe(2);
+      expect(solved2.cash).toBe(DEFAULT_CASH * 2);
+    });
+
+    it('문제 타입관계없이 오답이면 코드 1', async () => {
+      const dto = new SolveQuestionDto({ answer: 'wrong' });
       const [questionType1, questionType2, questionType3] =
         await seedQuestions(dataSource);
 

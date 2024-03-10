@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { GoodBaseEntity } from '../../common/good-base.entity';
+import { DEFAULT_CASH } from '../constants';
 import { SolveQuestionDto } from '../dto/solve-question.dto';
 import { WrongAnsewrException } from './wrong-answer.exception';
 
@@ -25,6 +26,9 @@ export class Question extends GoodBaseEntity<Question> {
 
   @Column()
   quantity: number;
+
+  @Column({ default: DEFAULT_CASH })
+  point: number;
 
   @Column()
   type: QuestionType;

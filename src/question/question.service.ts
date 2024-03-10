@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { User } from '../user/entities/user.entity';
 import { QUESTION_TAKE } from './constants';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SolveQuestionDto } from './dto/solve-question.dto';
@@ -9,6 +10,7 @@ import { Question } from './entities/question.entity';
 @Injectable()
 export class QuestionService {
   constructor(
+    private readonly dataSource: DataSource,
     @InjectRepository(Question)
     private readonly questionRepo: Repository<Question>,
   ) {}
@@ -22,14 +24,24 @@ export class QuestionService {
     return data;
   }
 
-  async solve(questionId: number, dto: SolveQuestionDto) {
-    const question = await this.questionRepo.findOneBy({ questionId });
+  async solve(dto: SolveQuestionDto & { userId: number; questionId: number }) {
+    return this.dataSource.transaction(async (manager) => {
+      const question = await manager
+        .getRepository(Question)
+        .findOneBy({ questionId: dto.questionId });
 
-    question.solve(dto);
+      question.solve(dto);
+      const user = await this.dataSource.getRepository(User).findOne({
+        where: { userId: dto.userId },
+        relations: { cashLog: true },
+      });
 
-    await this.questionRepo.save(question);
+      user.getReward(question.point);
+      await manager.save(question);
+      await manager.save(user);
 
-    return question;
+      return { ...question, ...user };
+    });
   }
 
   update(id: number, updateQuestionDto: SolveQuestionDto) {
