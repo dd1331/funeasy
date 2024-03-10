@@ -2,6 +2,7 @@ import { fakerKO } from '@faker-js/faker';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import * as dayjs from 'dayjs';
 import * as request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AuthModule } from '../auth/auth.module';
@@ -15,11 +16,10 @@ import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import { DEFAULT_CASH, QUESTION_TAKE } from './constants';
 import { SolveQuestionDto } from './dto/solve-question.dto';
-import { Question } from './entities/question.entity';
+import { Question, QuestionType } from './entities/question.entity';
 import { QuestionModule } from './question.module';
 import { QuestionService } from './question.service';
 import { seedQuestions } from './seed';
-
 describe('Question e2e', () => {
   let app: INestApplication;
   let userService: UserService;
@@ -49,6 +49,7 @@ describe('Question e2e', () => {
 
   describe('문제조회', () => {
     let token;
+    let user: User;
     beforeEach(async () => {
       const dto: CreateUserDto = {
         email: fakerKO.internet.email(),
@@ -56,11 +57,15 @@ describe('Question e2e', () => {
         password: '1234',
       };
 
-      const user = await userService.signup(dto);
+      user = await userService.signup(dto);
       const { accessToken } = authService.login(user);
       token = accessToken;
     });
 
+    afterEach(() => {
+      // jest.clearAllTimers();
+      jest.useRealTimers();
+    });
     it('문제 목록 5개 이상일시 3개 리턴', async () => {
       await seedQuestions(dataSource, 5);
       return request(app.getHttpServer())
@@ -105,12 +110,141 @@ describe('Question e2e', () => {
       expect(parseInt(count)).toBeGreaterThanOrEqual(2);
     });
 
-    it('유저는 동일한 mid를 가진 문제에 대해 하루에 한번만 참여가 가능하다', async () => {
+    it('유저는 동일한 mid를 가진 타입1 문제에 대해 하루에 한번만 참여가 가능하다 (자정을 기준으로 함)', async () => {
+      const questionService = module.get<QuestionService>(QuestionService);
       await seedQuestions(dataSource, 5);
+      const typeOne = await dataSource
+        .getRepository(Question)
+        .findOneBy({ type: QuestionType.ONE });
 
-      const [first, ...rest] = await dataSource.getRepository(Question).find();
+      const questions = await questionService.findAll({
+        userId: user.userId,
+        take: 100,
+      });
+      await questionService.solve({
+        userId: user.userId,
+        questionId: typeOne.questionId,
+        answer: typeOne.answer,
+      });
 
-      expect(rest.some((question) => question.mid === first.mid)).toBe(true);
+      const questionsExcludingTypeOne = await questionService.findAll({
+        userId: user.userId,
+        take: 100,
+      });
+
+      // TODO: refactor 3은 시드데이터 만들때 반복 한번에 몇개를 만드는지에 의존하고 있어 깨질우려
+      expect(questionsExcludingTypeOne.length).toBe(questions.length - 3);
+    });
+
+    it('유저는 동일한 mid를 가진 타입1 문제에 대해 하루에 한번만 참여가 가능하다(자정기준 하루 지난경우)', async () => {
+      const questionService = module.get<QuestionService>(QuestionService);
+      await seedQuestions(dataSource, 5);
+      const typeOne = await dataSource
+        .getRepository(Question)
+        .findOneBy({ type: QuestionType.ONE });
+
+      const questions = await questionService.findAll({
+        userId: user.userId,
+        take: 100,
+      });
+      await questionService.solve({
+        userId: user.userId,
+        questionId: typeOne.questionId,
+        answer: typeOne.answer,
+      });
+      jest
+        .useFakeTimers({ advanceTimers: true })
+        .setSystemTime(dayjs().endOf('d').add(1, 'm').toDate());
+
+      const questionsExcludingTypeOne = await questionService.findAll({
+        userId: user.userId,
+        take: 100,
+      });
+
+      expect(questionsExcludingTypeOne.length).toBe(questions.length);
+    });
+
+    it('유저는 동일한 mid를 가진 타입2 문제에 대해 3시간에 한 번 참여가능하다', async () => {
+      const questionService = module.get<QuestionService>(QuestionService);
+      await seedQuestions(dataSource, 5);
+      const typeTwo = await dataSource
+        .getRepository(Question)
+        .findOneBy({ type: QuestionType.TWO });
+
+      const questions = await questionService.findAll({
+        userId: user.userId,
+        take: 100,
+      });
+      await questionService.solve({
+        userId: user.userId,
+        questionId: typeTwo.questionId,
+        answer: typeTwo.answer,
+      });
+      jest
+        .useFakeTimers({ advanceTimers: true })
+        .setSystemTime(dayjs().add(2, 'h').add(59, 'm').toDate());
+
+      const questionsExcludingTypeTwo = await questionService.findAll({
+        userId: user.userId,
+        take: 100,
+      });
+
+      // TODO: refactor 3은 시드데이터 만들때 반복 한번에 몇개를 만드는지에 의존하고 있어 깨질우려
+      expect(questionsExcludingTypeTwo.length).toBe(questions.length - 3);
+    });
+
+    it('유저는 동일한 mid를 가진 타입2 문제에 대해 3시간에 한번만 참여가 가능하다(3시간 지난경우)', async () => {
+      const questionService = module.get<QuestionService>(QuestionService);
+      await seedQuestions(dataSource, 5);
+      const typeTwo = await dataSource
+        .getRepository(Question)
+        .findOneBy({ type: QuestionType.TWO });
+
+      const questions = await questionService.findAll({
+        userId: user.userId,
+        take: 100,
+      });
+      await questionService.solve({
+        userId: user.userId,
+        questionId: typeTwo.questionId,
+        answer: typeTwo.answer,
+      });
+
+      jest
+        .useFakeTimers({ advanceTimers: true })
+        .setSystemTime(dayjs().add(3, 'h').toDate());
+
+      const questionsExcludingTypeTwo = await questionService.findAll({
+        userId: user.userId,
+        take: 100,
+      });
+
+      expect(questionsExcludingTypeTwo.length).toBe(questions.length);
+    });
+    it('유저는 동일한 mid를 가진 타입3 문제에 대해 전체기간에 한 번 참여가능하다', async () => {
+      const questionService = module.get<QuestionService>(QuestionService);
+      await seedQuestions(dataSource, 5);
+      const typeThree = await dataSource
+        .getRepository(Question)
+        .findOneBy({ type: QuestionType.THREE });
+
+      const questions = await questionService.findAll({
+        userId: user.userId,
+        take: 100,
+      });
+      await questionService.solve({
+        userId: user.userId,
+        questionId: typeThree.questionId,
+        answer: typeThree.title + 'a',
+      });
+
+      const questionsExcludingTypeThree = await questionService.findAll({
+        userId: user.userId,
+        take: 100,
+      });
+
+      // TODO: refactor 3은 시드데이터 만들때 반복 한번에 몇개를 만드는지에 의존하고 있어 깨질우려
+      expect(questionsExcludingTypeThree.length).toBe(questions.length - 3);
     });
   });
 

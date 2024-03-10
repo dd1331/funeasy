@@ -1,5 +1,6 @@
 import { InternalServerErrorException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { Question } from 'src/question/entities/question.entity';
 import {
   Column,
   CreateDateColumn,
@@ -39,13 +40,13 @@ export class User {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  getReward(cash: number) {
+  getReward({ point, questionId }: Question) {
     if (!this.cashLog)
       throw new InternalServerErrorException('캐시로그 조회해야함');
 
-    this.cash = this.cash + cash;
+    this.cash = this.cash + point;
 
-    this.cashLog = [...this.cashLog, new UserCash({ cash })];
+    this.cashLog = [...this.cashLog, new UserCash({ cash: point, questionId })];
   }
 
   async signup({ password, ...rest }: CreateUserDto) {

@@ -37,8 +37,9 @@ export class QuestionController {
   }
 
   @Get()
-  async findAll() {
-    const data = await this.questionService.findAll();
+  @UseGuards(JwtAuthGuard)
+  async findAll(@ReqUser() { userId }) {
+    const data = await this.questionService.findAll({ userId });
 
     if (data.length) return data;
 
