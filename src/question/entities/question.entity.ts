@@ -36,7 +36,6 @@ export class Question extends GoodBaseEntity<Question> {
   type: QuestionType;
 
   solve(dto: SolveQuestionDto) {
-    // TODO: lock
     const correct = this.isCorrect(dto);
 
     if (!correct) throw new WrongAnsewrException();

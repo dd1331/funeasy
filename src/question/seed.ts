@@ -35,7 +35,14 @@ export const seedQuestions = async (
       quantity: fakerKO.number.int({ min: 3, max: 10 }),
       type: QuestionType.THREE,
     });
-    return repo.save([dto, dto2, dto3]);
+    const dto4: CreateQuestionDto = repo.create({
+      title: fakerKO.lorem.sentences(2),
+      answer: fakerKO.lorem.word(5),
+      mid,
+      quantity: fakerKO.number.int({ min: 3, max: 10 }),
+      type: QuestionType.FOUR,
+    });
+    return repo.save([dto, dto2, dto3, dto4]);
   });
 
   const res = await Promise.all(promises);

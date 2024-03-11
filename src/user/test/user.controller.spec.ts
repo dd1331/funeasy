@@ -4,12 +4,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import * as request from 'supertest';
-import { AuthModule } from '../auth/auth.module';
-import { AuthService } from '../auth/auth.service';
-import { ormModuleOption } from '../common/orm-module-option';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserService } from './user.service';
+import { AuthModule } from '../../auth/auth.module';
+import { AuthService } from '../../auth/auth.service';
+import { ormModuleOption } from '../../common/orm-module-option';
+import { CreateUserDto } from '../dto/create-user.dto';
+import { UpdateUserDto } from '../dto/update-user.dto';
+import { UserService } from '../user.service';
 
 describe('User e2e', () => {
   let app: INestApplication;

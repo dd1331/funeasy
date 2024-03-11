@@ -132,8 +132,9 @@ describe('Question e2e', () => {
         take: 100,
       });
 
-      // TODO: refactor 3은 시드데이터 만들때 반복 한번에 몇개를 만드는지에 의존하고 있어 깨질우려
-      expect(questionsExcludingTypeOne.length).toBe(questions.length - 3);
+      expect(questionsExcludingTypeOne.length).toBe(
+        questions.length - Object.keys(QuestionType).length,
+      );
     });
 
     it('유저는 동일한 mid를 가진 타입1 문제에 대해 하루에 한번만 참여가 가능하다(자정기준 하루 지난경우)', async () => {
@@ -189,8 +190,9 @@ describe('Question e2e', () => {
         take: 100,
       });
 
-      // TODO: refactor 3은 시드데이터 만들때 반복 한번에 몇개를 만드는지에 의존하고 있어 깨질우려
-      expect(questionsExcludingTypeTwo.length).toBe(questions.length - 3);
+      expect(questionsExcludingTypeTwo.length).toBe(
+        questions.length - Object.keys(QuestionType).length,
+      );
     });
 
     it('유저는 동일한 mid를 가진 타입2 문제에 대해 3시간에 한번만 참여가 가능하다(3시간 지난경우)', async () => {
@@ -243,8 +245,40 @@ describe('Question e2e', () => {
         take: 100,
       });
 
-      // TODO: refactor 3은 시드데이터 만들때 반복 한번에 몇개를 만드는지에 의존하고 있어 깨질우려
-      expect(questionsExcludingTypeThree.length).toBe(questions.length - 3);
+      expect(questionsExcludingTypeThree.length).toBe(
+        questions.length - Object.keys(QuestionType).length,
+      );
+    });
+
+    it.only('유저는 동일한 mid를 가진 타입4 문제에 대해 일주일에 한 번 참여가능하다', async () => {
+      const questionService = module.get<QuestionService>(QuestionService);
+      await seedQuestions(dataSource, 5);
+      const typeFour = await dataSource
+        .getRepository(Question)
+        .findOneBy({ type: QuestionType.FOUR });
+
+      const questions = await questionService.getQuestions({
+        userId: user.userId,
+        take: 100,
+      });
+      await questionService.solve({
+        userId: user.userId,
+        questionId: typeFour.questionId,
+        answer: typeFour.title + 'b',
+      });
+
+      jest
+        .useFakeTimers({ advanceTimers: true })
+        .setSystemTime(dayjs().add(5, 'd').toDate());
+
+      const questionsExcludingTypeFour = await questionService.getQuestions({
+        userId: user.userId,
+        take: 100,
+      });
+
+      expect(questionsExcludingTypeFour.length).toBe(
+        questions.length - Object.keys(QuestionType).length,
+      );
     });
     it('유저는 동일한 mid를 가진 타입3 문제에 대해 전체기간에 한 번 참여가능하다', async () => {
       const questionService = module.get<QuestionService>(QuestionService);

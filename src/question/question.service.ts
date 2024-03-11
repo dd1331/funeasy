@@ -1,23 +1,25 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Cache } from 'cache-manager';
-import * as dayjs from 'dayjs';
-import { DataSource, In, MoreThan, Not, Repository } from 'typeorm';
-import { UserCash } from '../user/entities/user-cash.entity';
+import { DataSource, In, MoreThan, Not } from 'typeorm';
 import { User } from '../user/entities/user.entity';
-import { QUESTION_TAKE, USER_QUESTION_CACHE_KEY } from './constants';
+import {
+  QUESTION_REPOSITORY,
+  QUESTION_TAKE,
+  USER_QUESTION_CACHE_KEY,
+} from './constants';
 import { SolveQuestionDto } from './dto/solve-question.dto';
 import { NotEnoughQuantityException } from './entities/not-enough-quantity.exception';
 import { Question, QuestionType } from './entities/question.entity';
+import { QuestionRepository } from './repository/question.repository';
 
 @Injectable()
 export class QuestionService {
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly dataSource: DataSource,
-    @InjectRepository(Question)
-    private readonly questionRepo: Repository<Question>,
+    @Inject(QUESTION_REPOSITORY)
+    private readonly questionRepo: QuestionRepository,
   ) {}
 
   private async getFilteredQuestions({
@@ -100,67 +102,53 @@ export class QuestionService {
   }
 
   private async getQuestionMidsToExclude(userId: number) {
-    // TODO: refactor
-    const typeOneToExclude = await this.dataSource
-      .getRepository(UserCash)
-      .find({
-        where: {
-          createdAt: MoreThan(dayjs().startOf('D').toDate()),
+    const allQuestionsToExcludePromise = Object.values(QuestionType).map(
+      (type: QuestionType) =>
+        this.questionRepo.getQuestionsToExcludeByType({
           userId,
-          question: { type: QuestionType.ONE },
-        },
-        relations: { question: true },
-      });
+          type,
+        }),
+    );
 
-    const typeTwoToExclude = await this.dataSource
-      .getRepository(UserCash)
-      .find({
-        where: {
-          createdAt: MoreThan(dayjs().subtract(3, 'h').toDate()),
-          userId,
-          question: { type: QuestionType.TWO },
-        },
-        relations: { question: true },
-      });
-    const typeThreeToExclude = await this.dataSource
-      .getRepository(UserCash)
-      .find({
-        where: {
-          userId,
-          question: { type: QuestionType.THREE },
-        },
-        relations: { question: true },
-      });
+    const allQuestionsToExclude = await Promise.all(
+      allQuestionsToExcludePromise,
+    );
 
     const toExclude = [
       ...new Set([
-        ...typeOneToExclude.map(({ question }) => question.mid),
-        ...typeTwoToExclude.map(({ question }) => question.mid),
-        ...typeThreeToExclude.map(({ question }) => question.mid),
+        ...allQuestionsToExclude
+          .flatMap((question) => question)
+          .map(({ question }) => question.mid),
       ]),
     ];
+
     return toExclude;
   }
 
   async solve(dto: SolveQuestionDto & { userId: number; questionId: number }) {
     return this.dataSource
       .transaction(async (manager) => {
-        const question = await manager
-          .getRepository(Question)
-          .findOneBy({ questionId: dto.questionId });
-        // TODO:notfound
+        const question = await manager.getRepository(Question).findOne({
+          lock: { mode: 'pessimistic_write' },
+          where: { questionId: dto.questionId },
+        });
+
+        if (!question) throw new NotFoundException();
+
         question.solve(dto);
-        // TODO: refactor
+
         const user = await this.dataSource.getRepository(User).findOne({
           where: { userId: dto.userId },
           relations: { cashLog: true },
         });
 
         user.getReward(question);
+
         await manager.save(question);
         await manager.save(user);
 
         this.cacheManager.reset();
+
         return { ...question, ...user };
       })
       .catch((err) => {
