@@ -1,29 +1,22 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Param,
-  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { WRONG_CODE } from '../common/constants';
 import { ReqUser } from '../user/user.decorator';
-import { CreateQuestionDto } from './dto/create-question.dto';
 import { SolveQuestionDto } from './dto/solve-question.dto';
 import { QuestionService } from './question.service';
 
 @Controller('questions')
 export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
-
-  @Post()
-  create(@Body() createQuestionDto: CreateQuestionDto) {
-    return this.questionService.create(createQuestionDto);
-  }
 
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
@@ -39,20 +32,10 @@ export class QuestionController {
   @Get()
   @UseGuards(JwtAuthGuard)
   async findAll(@ReqUser() { userId }) {
-    const data = await this.questionService.findAll({ userId });
+    const data = await this.questionService.getQuestions({ userId });
 
     if (data.length) return data;
 
-    return { data, code: 1 };
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateQuestionDto: SolveQuestionDto) {
-    return this.questionService.update(+id, updateQuestionDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.questionService.remove(+id);
+    return { data, code: WRONG_CODE };
   }
 }

@@ -117,7 +117,7 @@ describe('Question e2e', () => {
         .getRepository(Question)
         .findOneBy({ type: QuestionType.ONE });
 
-      const questions = await questionService.findAll({
+      const questions = await questionService.getQuestions({
         userId: user.userId,
         take: 100,
       });
@@ -127,7 +127,7 @@ describe('Question e2e', () => {
         answer: typeOne.answer,
       });
 
-      const questionsExcludingTypeOne = await questionService.findAll({
+      const questionsExcludingTypeOne = await questionService.getQuestions({
         userId: user.userId,
         take: 100,
       });
@@ -143,7 +143,7 @@ describe('Question e2e', () => {
         .getRepository(Question)
         .findOneBy({ type: QuestionType.ONE });
 
-      const questions = await questionService.findAll({
+      const questions = await questionService.getQuestions({
         userId: user.userId,
         take: 100,
       });
@@ -156,7 +156,7 @@ describe('Question e2e', () => {
         .useFakeTimers({ advanceTimers: true })
         .setSystemTime(dayjs().endOf('d').add(1, 'm').toDate());
 
-      const questionsExcludingTypeOne = await questionService.findAll({
+      const questionsExcludingTypeOne = await questionService.getQuestions({
         userId: user.userId,
         take: 100,
       });
@@ -171,7 +171,7 @@ describe('Question e2e', () => {
         .getRepository(Question)
         .findOneBy({ type: QuestionType.TWO });
 
-      const questions = await questionService.findAll({
+      const questions = await questionService.getQuestions({
         userId: user.userId,
         take: 100,
       });
@@ -184,7 +184,7 @@ describe('Question e2e', () => {
         .useFakeTimers({ advanceTimers: true })
         .setSystemTime(dayjs().add(2, 'h').add(59, 'm').toDate());
 
-      const questionsExcludingTypeTwo = await questionService.findAll({
+      const questionsExcludingTypeTwo = await questionService.getQuestions({
         userId: user.userId,
         take: 100,
       });
@@ -200,7 +200,7 @@ describe('Question e2e', () => {
         .getRepository(Question)
         .findOneBy({ type: QuestionType.TWO });
 
-      const questions = await questionService.findAll({
+      const questions = await questionService.getQuestions({
         userId: user.userId,
         take: 100,
       });
@@ -214,7 +214,7 @@ describe('Question e2e', () => {
         .useFakeTimers({ advanceTimers: true })
         .setSystemTime(dayjs().add(3, 'h').toDate());
 
-      const questionsExcludingTypeTwo = await questionService.findAll({
+      const questionsExcludingTypeTwo = await questionService.getQuestions({
         userId: user.userId,
         take: 100,
       });
@@ -228,7 +228,7 @@ describe('Question e2e', () => {
         .getRepository(Question)
         .findOneBy({ type: QuestionType.THREE });
 
-      const questions = await questionService.findAll({
+      const questions = await questionService.getQuestions({
         userId: user.userId,
         take: 100,
       });
@@ -238,7 +238,7 @@ describe('Question e2e', () => {
         answer: typeThree.title + 'a',
       });
 
-      const questionsExcludingTypeThree = await questionService.findAll({
+      const questionsExcludingTypeThree = await questionService.getQuestions({
         userId: user.userId,
         take: 100,
       });
@@ -246,7 +246,7 @@ describe('Question e2e', () => {
       // TODO: refactor 3은 시드데이터 만들때 반복 한번에 몇개를 만드는지에 의존하고 있어 깨질우려
       expect(questionsExcludingTypeThree.length).toBe(questions.length - 3);
     });
-    it.only('유저는 동일한 mid를 가진 타입3 문제에 대해 전체기간에 한 번 참여가능하다', async () => {
+    it('유저는 동일한 mid를 가진 타입3 문제에 대해 전체기간에 한 번 참여가능하다', async () => {
       const questionService = module.get<QuestionService>(QuestionService);
       const questions = await seedQuestions(dataSource, 5);
       const [question] = await dataSource.getRepository(Question).find();
@@ -254,19 +254,12 @@ describe('Question e2e', () => {
       question.quantity = 0;
       await dataSource.getRepository(Question).save(question);
 
-      const questionResults = await questionService.findAll({
+      const questionResults = await questionService.getQuestions({
         userId: user.userId,
         take: 100,
       });
 
       expect(questionResults.length).toBe(questions.length - 1);
-      // const questionsExcludingTypeThree = await questionService.findAll({
-      //   userId: user.userId,
-      //   take: 100,
-      // });
-
-      // // TODO: refactor 3은 시드데이터 만들때 반복 한번에 몇개를 만드는지에 의존하고 있어 깨질우려
-      // expect(questionsExcludingTypeThree.length).toBe(questions.length - 3);
     });
   });
 

@@ -48,8 +48,6 @@ export class UserService {
   async closeAccount(userId: number) {
     const user = await this.userRepo.findOneBy({ userId });
 
-    // TODO: 캐시로그삭제등 처리??
-
     if (!user) throw new NotFoundException('존재하지 않는 유저입니다');
 
     return await this.userRepo.softDelete({ userId });
