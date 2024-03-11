@@ -53,14 +53,14 @@ describe('Auth e2e', () => {
     const dto: CreateUserDto = {
       email: email,
       name: fakerKO.person.fullName(),
-      password: '1234',
+      password: '123456',
     };
 
     await userService.signup(dto);
 
     return request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email, password: '1234' })
+      .send({ email, password: '123456' })
       .expect(HttpStatus.OK)
       .expect((res) => {
         expect(res.body.accessToken).toEqual(expect.any(String));
@@ -77,7 +77,7 @@ describe('Auth e2e', () => {
 
     return request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: fakerKO.internet.email(), password: 'wrong' })
+      .send({ email: fakerKO.internet.email(), password: 'wrongs' })
       .expect(HttpStatus.UNAUTHORIZED);
   });
 });

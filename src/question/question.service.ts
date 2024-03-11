@@ -33,6 +33,7 @@ export class QuestionService {
 
     const questions = await this.questionRepo.find({
       where: { mid: Not(In(toExclude)), quantity: MoreThan(0) },
+      order: { quantity: 'DESC' },
       take,
     });
 
