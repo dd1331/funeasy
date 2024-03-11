@@ -1,9 +1,9 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { GoodBaseEntity } from '../../common/good-base.entity';
+import { NotEnoughQuantityException } from '../../common/not-enough-quantity.exception';
+import { WrongAnsewrException } from '../../common/wrong-answer.exception';
 import { DEFAULT_CASH } from '../constants';
 import { SolveQuestionDto } from '../dto/solve-question.dto';
-import { NotEnoughQuantityException } from './not-enough-quantity.exception';
-import { WrongAnsewrException } from './wrong-answer.exception';
 
 export enum QuestionType {
   ONE = 'ONE',

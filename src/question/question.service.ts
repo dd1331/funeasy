@@ -2,6 +2,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Cache } from 'cache-manager';
 import { DataSource, In, MoreThan, Not } from 'typeorm';
+import { NotEnoughQuantityException } from '../common/not-enough-quantity.exception';
 import { User } from '../user/entities/user.entity';
 import {
   QUESTION_REPOSITORY,
@@ -9,7 +10,6 @@ import {
   USER_QUESTION_CACHE_KEY,
 } from './constants';
 import { SolveQuestionDto } from './dto/solve-question.dto';
-import { NotEnoughQuantityException } from './entities/not-enough-quantity.exception';
 import { Question, QuestionType } from './entities/question.entity';
 import { QuestionRepository } from './repository/question.repository';
 

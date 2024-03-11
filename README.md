@@ -1,73 +1,50 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# 참고사항
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+### AOP
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+- 에러/일반 응답 모두 filter와 Intercepter를 활용하여 아래의 형식으로 별도의 작업 없이 아래의 형태로 변환됩니다.
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
-
-```bash
-$ npm install
+```Ts
+{
+  code: integer, // 정상처리시 0, 아닐 경우 다른 값
+  message: string,
+  data: Object 또는 [Object]
+}
 ```
 
-## Running the app
+### ClassValidator
 
-```bash
-# development
-$ npm run start
+- 요청데이터의 유효성체크를 dto에서 처리하여 데이터 유효성체크 로직의 완전분리
 
-# watch mode
-$ npm run start:dev
+### MID column
 
-# production mode
-$ npm run start:prod
-```
+- 해당 컬럼에 대한 설명이 확인 불가하여 카테고리와 유사한 성격의 중복이 가능한 id로 여기고 진행했습니다
+- 이미 푼 문제는 mid의 조건으로 구분하는 것으로 판단하고 mid 조건만 맞다면 계속 조회되도록 했습니다
 
-## Test
+### Question의 수량
 
-```bash
-# unit tests
-$ npm run test
+- 매일 갱신하는 스케쥴러 등의 별도로 로직이 있다고 가정하였습니다.
 
-# e2e tests
-$ npm run test:e2e
+### Question의 수량
 
-# test coverage
-$ npm run test:cov
-```
+- 생성시 임의의 값이 주어진다고 가정하였습니다.
 
-## Support
+### Question의 균일한 조회
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- 균일한 조회 == 무작위조회?
+- 꼭 무작위 방식이어야 하는지 확실하지 않은 상황이기에 의사교환이 가능한 상황이라면 문제 수량에 가중을 둔 정렬로 의견을 전달했을 것입니다. 따라서 이 방식으로 구현을 했습니다. 무작위어야 한다면 그에 맞추었을 것입니다.
+- 무작위로 조회해야하는 경우
+  - SQL RAND() 함수
+    - Question 테이블의 크기가 작으면 상관 없을 수도 있지만 크다면 조회시 부담이 됨
+  - 파티셔닝
+    - 실제 db의 파티션은 아니지만 비슷한 개념을 도입합니다. Question 테이블의 크기에 비례하여 1/n으로 나누고 이 영역 내에서 랜덤으로 조회합니다
 
-## Stay in touch
+### 데이터 부하와 로딩속도 개선
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+- nestjs가 제공하는 cachModule
+  - 문제 조회기능의 특성상 앱 재실행/스케일 아웃으로 인한 캐시데이터가 사라지는 문제에서 자유롭다고 판단하여 간단하게 사용할 수 있는 cacheModule을 활용하여 내부 메모리를 활용했습니다
+- 캐싱관리
+  - 문제 최초조회시 `{ userId: questionId[] }`의 형태로 저장됩니다
+  - 재조회시 수량이 남지않은 문제가 하나라도 존재한다면 최초조회와 같은 로직으로 필터링된 데이터를 캐싱합니다
+  - 수량이 있어 조회는 가능했으나 문제 해결시점에 수량이 남지 않은경우 해당 유저의 캐시를 뮤효화하고 에러를 발생시킵니다
+  - 정답처리가 된 경우에도 캐시를 무효화합니다
